@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TechStax - GitHub Repository Activity Monitor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .status-bar {
+            background: #f8f9fa;
+            padding: 15px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 5px 0;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-indicator.loading {
+            background: #ffc107;
+        }
+        
+        .status-indicator.error {
+            background: #dc3545;
+        }
+        
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(40, 167, 69, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(40, 167, 69, 0);
+            }
+        }
+        
+        .events-container {
+            padding: 30px;
+            min-height: 400px;
+        }
+        
+        .events-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e9ecef;
+        }
+        
+        .events-title {
+            font-size: 1.8rem;
+            color: #333;
+            font-weight: 600;
+        }
+        
+        .refresh-timer {
+            font-size: 0.9rem;
+            color: #6c757d;
+            background: #f8f9fa;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: 1px solid #e9ecef;
+        }
+        
+        .event-item {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .event-item:hover {
+            background: #e9ecef;
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .event-item.push {
+            border-left-color: #28a745;
+        }
+        
+        .event-item.pull_request {
+            border-left-color: #007bff;
+        }
+        
+        .event-item.merge {
+            border-left-color: #6f42c1;
+        }
+        
+        .event-item.new {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .event-message {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 10px;
+            line-height: 1.5;
+        }
+        
+        .event-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        .event-meta {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        .action-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .action-badge.push {
+            background: #28a745;
+            color: white;
+        }
+        
+        .action-badge.pull_request {
+            background: #007bff;
+            color: white;
+        }
+        
+        .action-badge.merge {
+            background: #6f42c1;
+            color: white;
+        }
+        
+        .no-events {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        
+        .no-events h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+        
+        .no-events p {
+            font-size: 1.1rem;
+            line-height: 1.6;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        
+        .loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+        }
+        
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .event-details {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .events-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 TechStax Assessment</h1>
+            <p>GitHub Repository Activity Monitor</p>
+        </div>
+        
+        <div class="status-bar">
+            <div class="status-item">
+                <div class="status-indicator" id="connectionStatus"></div>
+                <span id="connectionText">Connecting...</span>
+            </div>
+            <div class="status-item">
+                <span id="eventCount">Events: 0</span>
+            </div>
+            <div class="status-item">
+                <span id="lastUpdate">Last update: Never</span>
+            </div>
+        </div>
+        
+        <div class="events-container">
+            <div class="events-header">
+                <h2 class="events-title">Latest Repository Activities</h2>
+                <div class="refresh-timer">
+                    Next refresh in: <span id="countdown">15</span>s
+                </div>
+            </div>
+            
+            <div id="eventsContainer">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading GitHub events...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class GitHubActivityMonitor {
+            constructor() {
+                this.refreshInterval = 15000; // 15 seconds
+                this.countdownInterval = null;
+                this.fetchInterval = null;
+                this.lastEventIds = new Set();
+                
+                this.init();
+            }
+            
+            init() {
+                this.fetchEvents();
+                this.startAutoRefresh();
+                this.startCountdown();
+            }
+            
+            async fetchEvents() {
+                try {
+                    this.updateConnectionStatus('loading', 'Fetching events...');
+                    
+                    const response = await fetch('/api/events');
+                    const data = await response.json();
+                    
+                    if (data.status === 'success') {
+                        this.renderEvents(data.events);
+                        this.updateConnectionStatus('connected', 'Connected');
+                        this.updateEventCount(data.count);
+                        this.updateLastUpdate();
+                    } else {
+                        throw new Error(data.error || 'Failed to fetch events');
+                    }
+                    
+                } catch (error) {
+                    console.error('Error fetching events:', error);
+                    this.updateConnectionStatus('error', 'Connection error');
+                    this.showError('Failed to fetch events. Please check your connection.');
+                }
+            }
+            
+            renderEvents(events) {
+                const container = document.getElementById('eventsContainer');
+                
+                if (events.length === 0) {
+                    container.innerHTML = `
+                        <div class="no-events">
+                            <h3>No GitHub events yet</h3>
+                            <p>Waiting for webhook events from your GitHub repository...<br>
+                            Make sure your webhook is properly configured and pointing to this endpoint.</p>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const eventsHtml = events.map(event => {
+                    const isNew = !this.lastEventIds.has(event._id);
+                    this.lastEventIds.add(event._id);
+                    
+                    return this.createEventHTML(event, isNew);
+                }).join('');
+                
+                container.innerHTML = eventsHtml;
+            }
+            
+            createEventHTML(event, isNew) {
+                const message = this.formatEventMessage(event);
+                const timestamp = this.formatTimestamp(event.timestamp);
+                const actionClass = event.action.toLowerCase();
+                
+                return `
+                    <div class="event-item ${actionClass} ${isNew ? 'new' : ''}">
+                        <div class="event-message">${message}</div>
+                        <div class="event-details">
+                            <div class="event-meta">
+                                <div class="meta-item">
+                                    <strong>ID:</strong> ${event.request_id}
+                                </div>
+                                <div class="meta-item">
+                                    <strong>Time:</strong> ${timestamp}
+                                </div>
+                                ${event.from_branch ? `
+                                    <div class="meta-item">
+                                        <strong>From:</strong> ${event.from_branch}
+                                    </div>
+                                ` : ''}
+                                ${event.to_branch ? `
+                                    <div class="meta-item">
+                                        <strong>To:</strong> ${event.to_branch}
+                                    </div>
+                                ` : ''}
+                            </div>
+                            <div class="action-badge ${actionClass}">
+                                ${event.action}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            formatEventMessage(event) {
+                const timestamp = this.formatTimestamp(event.timestamp);
+                
+                switch (event.action) {
+                    case 'PUSH':
+                        return `<strong>${event.author}</strong> pushed to <strong>${event.to_branch}</strong> on ${timestamp}`;
+                    
+                    case 'PULL_REQUEST':
+                        return `<strong>${event.author}</strong> submitted a pull request from <strong>${event.from_branch}</strong> to <strong>${event.to_branch}</strong> on ${timestamp}`;
+                    
+                    case 'MERGE':
+                        return `<strong>${event.author}</strong> merged branch <strong>${event.from_branch}</strong> to <strong>${event.to_branch}</strong> on ${timestamp}`;
+                    
+                    default:
+                        return `<strong>${event.author}</strong> performed ${event.action} on ${timestamp}`;
+                }
+            }
+            
+            formatTimestamp(timestamp) {
+                const date = new Date(timestamp);
+                return date.toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                });
+            }
+            
+            updateConnectionStatus(status, text) {
+                const indicator = document.getElementById('connectionStatus');
+                const textElement = document.getElementById('connectionText');
+                
+                indicator.className = `status-indicator ${status}`;
+                textElement.textContent = text;
+            }
+            
+            updateEventCount(count) {
+                document.getElementById('eventCount').textContent = `Events: ${count}`;
+            }
+            
+            updateLastUpdate() {
+                const now = new Date().toLocaleTimeString();
+                document.getElementById('lastUpdate').textContent = `Last update: ${now}`;
+            }
+            
+            showError(message) {
+                const container = document.getElementById('eventsContainer');
+                container.innerHTML = `
+                    <div class="error-message">
+                        <strong>Error:</strong> ${message}
+                    </div>
+                `;
+            }
+            
+            startAutoRefresh() {
+                this.fetchInterval = setInterval(() => {
+                    this.fetchEvents();
+                }, this.refreshInterval);
+            }
+            
+            startCountdown() {
+                let seconds = this.refreshInterval / 1000;
+                const countdownElement = document.getElementById('countdown');
+                
+                this.countdownInterval = setInterval(() => {
+                    seconds--;
+                    countdownElement.textContent = seconds;
+                    
+                    if (seconds <= 0) {
+                        seconds = this.refreshInterval / 1000;
+                    }
+                }, 1000);
+            }
+            
+            destroy() {
+                if (this.fetchInterval) {
+                    clearInterval(this.fetchInterval);
+                }
+                if (this.countdownInterval) {
+                    clearInterval(this.countdownInterval);
+                }
+            }
+        }
+        
+        // Initialize the monitor when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.activityMonitor = new GitHubActivityMonitor();
+        });
+        
+        // Clean up when the page unloads
+        window.addEventListener('beforeunload', () => {
+            if (window.activityMonitor) {
+                window.activityMonitor.destroy();
+            }
+        });
+    </script>
+</body>
+</html> 
