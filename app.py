@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 TechStax Assessment - GitHub Webhook Receiver
 This Flask application receives GitHub webhook events and stores them in MongoDB.
