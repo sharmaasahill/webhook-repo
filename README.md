@@ -5,11 +5,19 @@
 ![MongoDB](https://img.shields.io/badge/MongoDB-8.0+-brightgreen.svg)
 ![Status](https://img.shields.io/badge/Status-Ready-success.svg)
 
-A professional Flask application that receives GitHub webhook events and displays them through a beautiful, real-time web interface.
+A professional Flask application that receives GitHub webhook events and displays them through a beautiful, real-time web interface. This project captures repository events (push, pull request, merge) in real-time and stores them in MongoDB for monitoring and analysis.
 
-## Live Demo
+## Overview
 
-Visit the web interface at `http://localhost:5000` after setup to see real-time GitHub events flowing in automatically every 15 seconds.
+This application serves as a webhook receiver for GitHub repository events. It processes incoming webhook payloads, stores event data in MongoDB, and provides a real-time dashboard to monitor repository activities. The dashboard automatically refreshes every 15 seconds to display the latest events.
+
+## What This Project Does
+
+- **Receives GitHub Webhooks**: Listens for push, pull request, and merge events from GitHub repositories
+- **Stores Events in MongoDB**: Persists all events with structured data (author, branch, timestamp, etc.)
+- **Real-time Dashboard**: Provides a web interface that displays events in real-time with auto-refresh
+- **API Endpoints**: Exposes REST API endpoints to retrieve events programmatically
+- **Health Monitoring**: Includes health check endpoint for monitoring application status
 
 ## Key Features
 
@@ -29,7 +37,7 @@ GitHub Repository
        ↓ Webhook Events
 Flask Application (/webhook)
        ↓ Process & Store
-MongoDB Database
+MongoDB Database (github_webhook_db)
        ↓ Retrieve & Display  
 Real-time Web Interface
 ```
@@ -39,19 +47,19 @@ Real-time Web Interface
 ### Push Events
 ```
 Format: {author} pushed to {branch} on {timestamp}
-Example: "john.doe pushed to main on Jul 2, 2025, 04:02 AM GMT+5:30"
+Example: "sahil.sharma pushed to main on Nov 9, 2025, 09:02 PM GMT+5:30"
 ```
 
 ### Pull Request Events
 ```
 Format: {author} submitted a pull request from {from_branch} to {to_branch} on {timestamp}
-Example: "jane.smith submitted a pull request from feature/auth to main on Jul 2, 2025, 04:01 AM GMT+5:30"
+Example: "sahil.sharma submitted a pull request from feature/auth to main on Nov 9, 2025, 09:01 PM GMT+5:30"
 ```
 
 ### Merge Events
 ```
 Format: {author} merged branch {from_branch} to {to_branch} on {timestamp}
-Example: "john.doe merged branch feature/auth to main on Jul 2, 2025, 04:02 AM GMT+5:30"
+Example: "sahil.sharma merged branch feature/auth to main on Nov 9, 2025, 09:02 PM GMT+5:30"
 ```
 
 ## Technology Stack
@@ -73,14 +81,31 @@ Before you begin, ensure you have the following installed:
 - **Git** - `git --version`
 - **ngrok** - `ngrok version` (for webhook testing)
 
-## Quick Start
+## Installation
 
-### Clone & Setup
+### Quick Setup (Using setup.sh)
+
 ```bash
-# Clone this repository
+# Run the setup script
+bash setup.sh
+```
+
+The setup script will:
+- Check Python and MongoDB installation
+- Create virtual environment
+- Install dependencies
+- Create .env file from template
+
+### Manual Setup
+
+#### 1. Clone the Repository
+```bash
 git clone https://github.com/sharmaasahill/webhook-repo.git
 cd webhook-repo
+```
 
+#### 2. Create Virtual Environment
+```bash
 # Create virtual environment
 python -m venv venv
 
@@ -89,49 +114,78 @@ python -m venv venv
 venv\Scripts\activate
 # macOS/Linux:
 source venv/bin/activate
+```
 
-# Install dependencies
+#### 3. Install Dependencies
+```bash
 pip install -r requirements.txt
 ```
 
-### Database Setup
+#### 4. Configure Environment
 ```bash
-# Start MongoDB
+# Create environment file from template
+cp env.example .env
+
+# Edit .env file with your configuration
+# Key settings:
+# - DATABASE_NAME=github_webhook_db
+# - MONGO_URI=mongodb://localhost:27017/
+# - PORT=5000
+```
+
+#### 5. Start MongoDB
+```bash
+# Windows: Start MongoDB service
+net start MongoDB
+
+# Or manually start MongoDB
 mongod
 
-# Verify connection (optional)
+# Verify MongoDB is running
 mongosh --eval "db.runCommand('ping')"
 ```
 
-### Configuration
-```bash
-# Create environment file
-cp env.example .env
+## Running the Application
 
-# Edit configuration (optional)
-# Set your MongoDB URI and webhook secret
-```
-
-### Launch Application
+### Start the Flask Server
 ```bash
-# Start the Flask server
+# Activate virtual environment (if not already activated)
+venv\Scripts\activate  # Windows
+# source venv/bin/activate  # macOS/Linux
+
+# Run the application
 python app.py
-
-# Application will be available at:
-# http://localhost:5000
 ```
 
-### Expose with ngrok
+You should see:
+```
+INFO:__main__:Successfully connected to MongoDB
+INFO:__main__:Starting GitHub Webhook Receiver on port 5000
+ * Running on http://0.0.0.0:5000
+```
+
+### Access the Dashboard
+Open your browser and navigate to:
+```
+http://localhost:5000
+```
+
+### Expose with ngrok (for Webhook Testing)
 ```bash
-# In a new terminal
+# In a new terminal window
 ngrok http 5000
-
-# Copy the HTTPS URL (e.g., https://abc123.ngrok.io)
 ```
+
+You'll see output like:
+```
+Forwarding  https://xxxxx.ngrok.io -> http://localhost:5000
+```
+
+**Copy the HTTPS URL** - you'll need this for GitHub webhook configuration.
 
 ## GitHub Webhook Configuration
 
-### Setup Instructions:
+### Setup Instructions
 
 1. **Navigate to Repository Settings**
    - Go to your GitHub repository
@@ -141,16 +195,27 @@ ngrok http 5000
    ```
    Payload URL: https://your-ngrok-url.ngrok.io/webhook
    Content type: application/json
-   Secret: (your webhook secret from .env)
-   Events: Push  Pull requests
+   Secret: (your webhook secret from .env file, optional)
+   Events: Select "Push" and "Pull requests"
    Active: Yes
    ```
 
 3. **Test the Integration**
-   - Make a commit and push
-   - Create a pull request  
+   - Make a commit and push to your repository
+   - Create a pull request
    - Merge a pull request
-   - Watch events appear in real-time
+   - Watch events appear in real-time on the dashboard at `http://localhost:5000`
+
+### Getting Your Payload URL
+
+When you run `ngrok http 5000`, you'll see:
+```
+Forwarding  https://xxxxx.ngrok.io -> http://localhost:5000
+```
+
+Your payload URL will be: `https://xxxxx.ngrok.io/webhook`
+
+**Important**: Always append `/webhook` to your ngrok URL when configuring the GitHub webhook.
 
 ## API Reference
 
@@ -161,7 +226,7 @@ ngrok http 5000
 | `/api/events` | GET | Retrieve all events | JSON array |
 | `/health` | GET | Health check | JSON status |
 
-### Example API Response:
+### Example API Response
 ```json
 {
   "status": "success",
@@ -169,11 +234,11 @@ ngrok http 5000
     {
       "_id": "60f1b2c3d4e5f6789abc123",
       "request_id": "abc1234",
-      "author": "john.doe",
+      "author": "sahil.sharma",
       "action": "PUSH",
       "from_branch": "",
       "to_branch": "main",
-      "timestamp": "2025-07-02T04:02:30Z"
+      "timestamp": "2025-11-09T09:02:30Z"
     }
   ],
   "count": 1
@@ -196,6 +261,12 @@ Events are stored in MongoDB with the following structure:
 }
 ```
 
+### Database Information
+
+- **Database Name**: `github_webhook_db`
+- **Collection Name**: `github_events`
+- **Connection**: MongoDB running on `localhost:27017` (default)
+
 ## Environment Configuration
 
 | Variable | Description | Default | Required |
@@ -207,44 +278,34 @@ Events are stored in MongoDB with the following structure:
 | `PORT` | Flask server port | `5000` | No |
 | `DEBUG` | Enable debug mode | `False` | No |
 
-## Troubleshooting
+### Example .env File
+```env
+# MongoDB Configuration
+MONGO_URI=mongodb://localhost:27017/
+DATABASE_NAME=github_webhook_db
+COLLECTION_NAME=github_events
 
-<details>
-<summary><strong>MongoDB Connection Issues</strong></summary>
+# GitHub Webhook Secret
+WEBHOOK_SECRET=your-webhook-secret-key
 
-**Problem**: `Failed to connect to MongoDB`
+# Flask Configuration
+PORT=5000
+DEBUG=False
+```
 
-**Solutions**:
-- Ensure MongoDB is running: `mongod --version`
-- Check your `MONGO_URI` in `.env` file
-- For MongoDB Atlas: Use full connection string with credentials
-- For local MongoDB: Ensure service is started
-</details>
+## Project Structure
 
-<details>
-<summary><strong>Webhook Not Receiving Events</strong></summary>
-
-**Problem**: GitHub webhook returns 404 or timeout
-
-**Solutions**:
-- Verify ngrok is running: `ngrok http 5000`
-- Check webhook URL includes `/webhook` endpoint
-- Ensure Flask app is running on port 5000
-- Check GitHub webhook delivery logs
-- Verify payload URL format: `https://xxxxx.ngrok.io/webhook`
-</details>
-
-<details>
-<summary><strong>UI Not Updating</strong></summary>
-
-**Problem**: Dashboard shows old data
-
-**Solutions**:
-- Check browser console for JavaScript errors
-- Verify `/api/events` endpoint responds: `curl http://localhost:5000/api/events`
-- Clear browser cache and reload
-- Check MongoDB connection status
-</details>
+```
+webhook-repo/
+├── app.py                  # Main Flask application
+├── templates/
+│   └── index.html         # Web interface template
+├── requirements.txt       # Python dependencies
+├── env.example           # Environment configuration template
+├── setup.sh             # Automated setup script
+├── .gitignore           # Git ignore rules
+└── README.md            # This documentation
+```
 
 ## Testing
 
@@ -268,30 +329,64 @@ curl -X POST http://localhost:5000/webhook \
 3. **Merge Event**: Merge the PR
 4. **Real-time Verification**: Watch events appear on dashboard
 
-## Features
+## Troubleshooting
 
-- **GitHub Webhook Integration** - Full implementation
-- **MongoDB Data Storage** - Proper schema and persistence  
-- **Real-time UI Updates** - 15-second auto-refresh
-- **Event Format Compliance** - Exact specification matching
-- **Professional Code Quality** - Clean, documented, error-handled
-- **Merge Events** - Merge event handling support
-- **Modern Web Interface** - Responsive, beautiful design
-- **Security Implementation** - Webhook signature verification
+### MongoDB Connection Issues
+**Problem**: `Failed to connect to MongoDB`
 
-## Project Structure
+**Solutions**:
+- Ensure MongoDB is running: `mongod --version`
+- Check your `MONGO_URI` in `.env` file
+- For MongoDB Atlas: Use full connection string with credentials
+- For local MongoDB: Ensure service is started
+- Windows: `net start MongoDB`
 
-```
-webhook-repo/
-├── app.py                  # Main Flask application
-├── templates/
-│   └── index.html         # Web interface template
-├── requirements.txt       # Python dependencies
-├── env.example           # Environment configuration template
-├── setup.sh             # Automated setup script
-├── .gitignore           # Git ignore rules
-└── README.md            # This documentation
-```
+### Webhook Not Receiving Events
+**Problem**: GitHub webhook returns 404 or timeout
+
+**Solutions**:
+- Verify ngrok is running: `ngrok http 5000`
+- Check webhook URL includes `/webhook` endpoint
+- Ensure Flask app is running on port 5000
+- Check GitHub webhook delivery logs
+- Verify payload URL format: `https://xxxxx.ngrok.io/webhook`
+
+### UI Not Updating
+**Problem**: Dashboard shows old data
+
+**Solutions**:
+- Check browser console for JavaScript errors
+- Verify `/api/events` endpoint responds: `curl http://localhost:5000/api/events`
+- Clear browser cache and reload
+- Check MongoDB connection status
+
+### Port Already in Use
+**Problem**: `Address already in use` on port 5000
+
+**Solutions**:
+- Change port in `.env`: `PORT=5001`
+- Or kill process using port 5000:
+  ```bash
+  # Windows:
+  netstat -ano | findstr :5000
+  taskkill /PID <PID> /F
+  ```
+
+## Development
+
+### Code Structure
+- `app.py`: Main Flask application with webhook processing logic
+- `templates/index.html`: Frontend dashboard with real-time updates
+- Event parsing functions handle different GitHub event types
+- MongoDB integration for persistent storage
+
+### Key Functions
+- `parse_push_event()`: Parses GitHub push event payloads
+- `parse_pull_request_event()`: Parses GitHub pull request event payloads
+- `parse_merge_event()`: Parses GitHub merge event payloads
+- `verify_webhook_signature()`: Verifies webhook signature for security
+
+
 
 ## Contributing
 
@@ -299,7 +394,7 @@ For questions or improvements:
 
 1. **Issues**: Report bugs or feature requests
 2. **Pull Requests**: Improvements welcome
-3. **Contact**: Technical queries
+3. **Contact**: Technical queries via email at i.sahilkrsharma@gmail.com
 
 ## License
 
@@ -307,7 +402,7 @@ This project is created for personal use and educational purposes.
 
 ---
 
-<div align="center">
+<div align="left">
 
 **GitHub Webhook Receiver**
 
