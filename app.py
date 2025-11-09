@@ -1,5 +1,5 @@
 """
-TechStax Assessment - GitHub Webhook Receiver
+GitHub Webhook Receiver
 This Flask application receives GitHub webhook events and stores them in MongoDB.
 It also provides a web interface to display the latest repository activities.
 """
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 # MongoDB configuration
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017/')
-DATABASE_NAME = os.getenv('DATABASE_NAME', 'techstax_assessment')
+DATABASE_NAME = os.getenv('DATABASE_NAME', 'github_webhook_db')
 COLLECTION_NAME = os.getenv('COLLECTION_NAME', 'github_events')
 
 # GitHub webhook secret
@@ -215,5 +215,5 @@ if __name__ == '__main__':
     port = int(os.getenv('PORT', 5000))
     debug = os.getenv('DEBUG', 'False').lower() == 'true'
     
-    logger.info(f"Starting TechStax Webhook Receiver on port {port}")
+    logger.info(f"Starting GitHub Webhook Receiver on port {port}")
     app.run(host='0.0.0.0', port=port, debug=debug) 
